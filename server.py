@@ -1,21 +1,34 @@
 import socket
 import struct
 import os
+from fpdf import FPDF
 
 SUPPORTED = {
-    ("txt", "pdf"),
-    ("png", "jpg"),
-    ("wav", "mp3")
+    ("txt", "pdf")
 }
 
-def convert_file(input_path, output_path, src, dst):
-    # Coloque aqui a lógica real usando bibliotecas (Pillow, FPDF, pydub, etc.)
-    # O exemplo abaixo só copia o arquivo pra simular a conversão.
-    with open(input_path, "rb") as src_f:
-        data = src_f.read()
+def txt_to_pdf(input_path, output_path):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
 
-    with open(output_path, "wb") as dst_f:
-        dst_f.write(data)
+    # Lê o .txt linha a linha e escreve no PDF
+    # encoding='utf-8' funciona bem para textos com acentos
+    with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            # rstrip() tira quebras de linha pra não ficar linha em branco dupla
+            pdf.multi_cell(0, 8, line.rstrip("\n"))
+
+    pdf.output(output_path)
+
+def convert_file(input_path, output_path, src, dst):
+    # Aqui você pode checar explicitamente o tipo, se quiser
+    if (src, dst) == ("txt", "pdf"):
+        txt_to_pdf(input_path, output_path)
+    else:
+        # Em teoria não deveria cair aqui porque o SUPPORTED já filtra
+        raise ValueError(f"Conversão não suportada: {src} -> {dst}")
 
 def handle_client(conn):
     req = conn.recv(1024).decode().strip()
