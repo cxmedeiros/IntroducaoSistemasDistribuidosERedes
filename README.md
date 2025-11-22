@@ -129,9 +129,3 @@ O servidor:
 - apaga ambos logo após o envio
 
 Nenhum arquivo temporário permanece armazenado.
-
----
-
-## 📄 Licença
-
-Projeto acadêmico — livre para fins educacionais.
