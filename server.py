@@ -1,7 +1,7 @@
-import socket
-import struct
-import os
-from fpdf import FPDF
+import socket #para criar o servidor TCP (abrir porta, aceitar conexões, mandar/receber dados).
+import struct #para empacotar/desempacotar inteiros em bytes (útil para enviar tamanhos de arquivos).
+import os #para manipulação de arquivos (criar, deletar arquivos temporários).
+from fpdf import FPDF #biblioteca para criar arquivos PDF a partir de texto.
 
 SUPPORTED = {
     ("txt", "pdf")
@@ -48,13 +48,13 @@ def handle_client(conn):
 
     # Recebe tamanho do arquivo
     raw_size = conn.recv(8)
-    (size,) = struct.unpack("!Q", raw_size)
+    (size,) = struct.unpack("!Q", raw_size) #interpreta esses 8 bytes como um inteiro sem sinal (Q), em ordem de rede (!).
 
     content = b""
     while len(content) < size:
         content += conn.recv(4096)
 
-    input_path = f"temp_{filename}"
+    input_path = f"temp_{filename}" #Salva o conteúdo recebido em um arquivo temporário, por exemplo temp_arquivo.txt.
     with open(input_path, "wb") as f:
         f.write(content)
 
@@ -66,8 +66,8 @@ def handle_client(conn):
     conn.sendall(struct.pack("!Q", len(result_data)))
     conn.sendall(result_data)
 
-    os.remove(input_path)
-    os.remove(output_path)
+    os.remove(input_path) #Limpa os arquivos temporários.
+    os.remove(output_path) #Limpa os arquivos temporários.
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
