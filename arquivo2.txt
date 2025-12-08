@@ -4,13 +4,10 @@ import os  # para manipulação de arquivos (criar, deletar arquivos temporário
 import threading  # para lidar com múltiplos clientes simultaneamente.
 import uuid  # para gerar identificadores únicos para arquivos temporários.
 from fpdf import FPDF  # biblioteca para criar arquivos PDF a partir de texto.
-from PIL import Image  # biblioteca para manipulação de imagens.
 
 # Formatos de conversão suportados
 SUPPORTED = {
-    ("txt", "pdf"),
-    ("jpeg", "png"),
-    ("jpg", "png")
+    ("txt", "pdf")
 }
 
 # Diretório para armazenar os arquivos convertidos
@@ -39,22 +36,10 @@ def txt_to_pdf(input_path, output_path):
     pdf.output(output_path)
 
 
-def jpeg_to_png(input_path, output_path):
-    """Converte uma imagem JPEG para PNG."""
-    with Image.open(input_path) as img:
-        # Converte para RGB se necessário (algumas imagens JPEG podem ter modo diferente)
-        if img.mode in ('RGBA', 'LA', 'P'):
-            img = img.convert('RGB')
-        # Salva como PNG
-        img.save(output_path, 'PNG')
-
-
 def convert_file(input_path, output_path, src, dst):
     """Realiza a conversão de arquivo conforme os formatos especificados."""
     if (src, dst) == ("txt", "pdf"):
         txt_to_pdf(input_path, output_path)
-    elif (src, dst) in [("jpeg", "png"), ("jpg", "png")]:
-        jpeg_to_png(input_path, output_path)
     else:
         raise ValueError(f"Conversão não suportada: {src} -> {dst}")
 
