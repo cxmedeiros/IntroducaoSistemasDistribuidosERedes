@@ -17,10 +17,6 @@ import time
 from fpdf import FPDF
 from PIL import Image
 
-# ============================================================
-# CONFIGURAÇÕES
-# ============================================================
-
 # Tamanho máximo de dados por pacote (excluindo header)
 CHUNK_SIZE = 1024
 
@@ -49,10 +45,6 @@ SUPPORTED = {
 # Diretório para armazenar os arquivos convertidos
 OUTPUT_DIR = "conversoes_servidor"
 
-# ============================================================
-# TIPOS DE PACOTES
-# ============================================================
-
 PKT_COMMAND = 0x01      # Comando inicial (CONVERT ...)
 PKT_METADATA = 0x02     # Metadados do arquivo (nome, tamanho, total_pacotes)
 PKT_DATA = 0x03         # Dados do arquivo
@@ -63,18 +55,10 @@ PKT_OK = 0x07           # Confirmação de comando válido
 PKT_ERROR = 0x08        # Mensagem de erro
 PKT_COMPLETE = 0x09     # Transferência completa
 
-# ============================================================
-# LOCKS E CONTADORES
-# ============================================================
 
 file_lock = threading.Lock()
 client_counter = 0
 counter_lock = threading.Lock()
-
-
-# ============================================================
-# FUNÇÕES DE CONVERSÃO
-# ============================================================
 
 def txt_to_pdf(input_path, output_path):
     """Converte arquivo TXT para PDF."""
@@ -114,10 +98,6 @@ def ensure_output_dir():
         if not os.path.exists(OUTPUT_DIR):
             os.makedirs(OUTPUT_DIR)
 
-
-# ============================================================
-# FUNÇÕES DE PROTOCOLO UDP
-# ============================================================
 
 def create_packet(pkt_type, packet_id, total_packets, data=b""):
     """
@@ -202,11 +182,6 @@ def calculate_sha256(data):
     """Calcula o hash SHA256 dos dados."""
     return hashlib.sha256(data).hexdigest()
 
-
-# ============================================================
-# HANDLER DE CLIENTE
-# ============================================================
-
 def handle_client(sock, initial_packet, client_addr, client_id):
     """
     Trata a comunicação com um cliente.
@@ -253,7 +228,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
         ok_pkt = create_packet(PKT_OK, 0, 0, b"OK")
         sock.sendto(ok_pkt, client_addr)
         
-        # ========== RECEBE METADADOS ==========
+        #  RECEBE METADADOS 
         sock.settimeout(30.0)
         
         pkt_type, packet_id, total_packets, data = receive_with_ack(sock, client_addr)
@@ -275,7 +250,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
         print(f"[Cliente {client_id}] Recebendo arquivo: {original_filename}")
         print(f"[Cliente {client_id}] Tamanho: {file_size} bytes, Pacotes: {total_data_packets}")
         
-        # ========== RECEBE PACOTES DE DADOS ==========
+        #  RECEBE PACOTES DE DADOS 
         received_packets = {}
         expected_packets = set(range(total_data_packets))
         
@@ -299,7 +274,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
                     break
                 continue
         
-        # ========== RECEBE HASH ==========
+        #  RECEBE HASH 
         sock.settimeout(10.0)
         pkt_type, packet_id, _, hash_data = receive_with_ack(sock, client_addr)
         
@@ -310,7 +285,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
         received_hash = hash_data.decode()
         print(f"[Cliente {client_id}] Hash recebido: {received_hash[:16]}...")
         
-        # ========== RECONSTRÓI ARQUIVO ==========
+        #  RECONSTRÓI ARQUIVO 
         file_content = b""
         for i in range(total_data_packets):
             if i in received_packets:
@@ -332,7 +307,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
         
         print(f"[Cliente {client_id}] Hash verificado com sucesso!")
         
-        # ========== CONVERTE ARQUIVO ==========
+        #  CONVERTE ARQUIVO 
         unique_id = uuid.uuid4().hex[:8]
         input_path = f"temp_{unique_id}_{original_filename}"
         base_name = os.path.splitext(original_filename)[0]
@@ -361,7 +336,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
             if os.path.exists(input_path):
                 os.remove(input_path)
         
-        # ========== ENVIA ARQUIVO CONVERTIDO ==========
+        #  ENVIA ARQUIVO CONVERTIDO 
         
         # Calcula hash do arquivo convertido
         result_hash = calculate_sha256(result_data)
@@ -410,10 +385,7 @@ def handle_client(sock, initial_packet, client_addr, client_id):
         import traceback
         traceback.print_exc()
 
-
-# ============================================================
 # MAIN
-# ============================================================
 
 def main():
     global client_counter
@@ -424,14 +396,14 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", SERVER_PORT))
     
-    print("=" * 60)
+    print("\n\n")
     print("SERVIDOR DE CONVERSÃO DE ARQUIVOS (UDP)")
     print("=" * 60)
     print(f"Aguardando conexões na porta {SERVER_PORT}...")
     print(f"Conversões suportadas: {SUPPORTED}")
     print(f"Arquivos convertidos serão salvos em: ./{OUTPUT_DIR}/")
     print(f"Tamanho do chunk: {CHUNK_SIZE} bytes")
-    print("=" * 60)
+    print("\n\n")
     
     try:
         while True:

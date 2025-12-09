@@ -14,10 +14,6 @@ import sys
 import hashlib
 import time
 
-# ============================================================
-# CONFIGURAÇÕES
-# ============================================================
-
 # Tamanho máximo de dados por pacote (excluindo header)
 CHUNK_SIZE = 1024
 
@@ -40,10 +36,6 @@ SERVER_PORT = 5051
 # Diretório local para salvar os arquivos convertidos
 OUTPUT_DIR = "resultados_client"
 
-# ============================================================
-# TIPOS DE PACOTES
-# ============================================================
-
 PKT_COMMAND = 0x01      # Comando inicial (CONVERT ...)
 PKT_METADATA = 0x02     # Metadados do arquivo (nome, tamanho, total_pacotes)
 PKT_DATA = 0x03         # Dados do arquivo
@@ -53,11 +45,6 @@ PKT_NACK = 0x06         # Erro / Negação
 PKT_OK = 0x07           # Confirmação de comando válido
 PKT_ERROR = 0x08        # Mensagem de erro
 PKT_COMPLETE = 0x09     # Transferência completa
-
-
-# ============================================================
-# FUNÇÕES AUXILIARES
-# ============================================================
 
 def ensure_output_dir():
     """Garante que o diretório de saída existe."""
@@ -72,9 +59,9 @@ def calculate_sha256(data):
 
 def print_help():
     """Exibe ajuda sobre os comandos disponíveis."""
-    print("\n" + "=" * 60)
+    print("\n\n")
     print("COMANDOS DISPONÍVEIS:")
-    print("=" * 60)
+    print("\n\n")
     print("  CONVERT <formato_origem> <formato_destino> <arquivo>")
     print("")
     print("  Conversões suportadas:")
@@ -90,12 +77,6 @@ def print_help():
     print("")
     print("  HELP - Exibe esta mensagem de ajuda")
     print("  EXIT - Encerra o cliente")
-    print("=" * 60 + "\n")
-
-
-# ============================================================
-# FUNÇÕES DE PROTOCOLO UDP
-# ============================================================
 
 def create_packet(pkt_type, packet_id, total_packets, data=b""):
     """
@@ -174,11 +155,6 @@ def receive_with_ack(sock, server_addr, expected_type=None, timeout=10.0):
     except socket.timeout:
         return None, None, None, None
 
-
-# ============================================================
-# FUNÇÃO DE CONVERSÃO
-# ============================================================
-
 def convert_file(sock, server_addr, src, dst, filename):
     """
     Envia um arquivo para conversão e recebe o resultado.
@@ -211,7 +187,7 @@ def convert_file(sock, server_addr, src, dst, filename):
     print(f"[INFO] Pacotes: {total_packets}")
     print(f"[INFO] Hash: {file_hash[:16]}...")
     
-    # ========== ENVIA COMANDO ==========
+    #  ENVIA COMANDO 
     command = f"CONVERT {src} {dst} {base_filename}"
     cmd_pkt = create_packet(PKT_COMMAND, 0, 0, command.encode())
     
@@ -258,7 +234,7 @@ def convert_file(sock, server_addr, src, dst, filename):
         print("[ERRO] Timeout aguardando confirmação")
         return False
     
-    # ========== ENVIA METADADOS ==========
+    #  ENVIA METADADOS 
     metadata = f"{base_filename}|{file_size}|{total_packets}"
     meta_pkt = create_packet(PKT_METADATA, 0, total_packets, metadata.encode())
     
@@ -268,7 +244,7 @@ def convert_file(sock, server_addr, src, dst, filename):
     
     print("[INFO] Metadados enviados")
     
-    # ========== ENVIA PACOTES DE DADOS ==========
+    #  ENVIA PACOTES DE DADOS 
     print(f"[INFO] Enviando arquivo...")
     
     for i in range(total_packets):
@@ -286,7 +262,7 @@ def convert_file(sock, server_addr, src, dst, filename):
         progress = (i + 1) / total_packets * 100
         print(f"    [Enviado] Pacote {i + 1}/{total_packets} ({progress:.1f}%)")
     
-    # ========== ENVIA HASH ==========
+    #  ENVIA HASH 
     hash_pkt = create_packet(PKT_HASH, 0, 0, file_hash.encode())
     
     if not send_with_ack(sock, server_addr, hash_pkt, 0):
@@ -295,7 +271,7 @@ def convert_file(sock, server_addr, src, dst, filename):
     
     print("[INFO] Hash enviado. Aguardando conversão...")
     
-    # ========== RECEBE RESULTADO ==========
+    #  RECEBE RESULTADO 
     
     # Recebe metadados do resultado
     pkt_type, packet_id, total_result_packets, data = receive_with_ack(sock, server_addr, timeout=30.0)
@@ -384,10 +360,7 @@ def convert_file(sock, server_addr, src, dst, filename):
     print(f"[SUCESSO] Arquivo convertido salvo em: {output_path}")
     return True
 
-
-# ============================================================
 # MAIN
-# ============================================================
 
 def main():
     ensure_output_dir()
