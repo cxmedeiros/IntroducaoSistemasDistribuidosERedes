@@ -5,7 +5,7 @@ Este diretório contém a implementação gRPC do projeto. Abaixo estão instru�
 ## Pré-requisitos
 
 - Python 3.8+ instalado
-- Recomenda-se criar um ambiente virtual (`venv`) para isolar dependências
+- Python 3.8+ instalado
 
 ## Passos rápidos (PowerShell)
 
@@ -15,14 +15,7 @@ Este diretório contém a implementação gRPC do projeto. Abaixo estão instru�
 cd path\to\IntroducaoSistemasDistribuidosERedes\entrega3_gRPC
 ```
 
-2. (Opcional, recomendado) Crie e ative um ambiente virtual:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-3. Instale as dependências necessárias:
+2. Instale as dependências necessárias:
 
 ```powershell
 python -m pip install --upgrade pip

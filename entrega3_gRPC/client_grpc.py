@@ -1,5 +1,3 @@
-# client_grpc.py
-
 import os
 import sys
 
@@ -11,11 +9,9 @@ import file_converter_pb2_grpc as pb2_grpc
 SERVER_HOST = "localhost"
 SERVER_PORT = 50051
 
-# Diretório de saída no cliente
 OUTPUT_DIR = "resultados_client_grpc"
 
-# Tamanho do chunk usado no envio/leitura
-CHUNK_SIZE = 1024 * 32  # 32 KB
+CHUNK_SIZE = 1024 * 32
 
 
 def ensure_output_dir():
@@ -52,7 +48,6 @@ def generate_requests(src: str, dst: str, filename: str):
     dst = dst.lstrip(".").lower()
     base_name = os.path.basename(filename)
 
-    # 1) comando
     cmd = pb2.Command(
         src_ext=src,
         dst_ext=dst,
@@ -60,7 +55,6 @@ def generate_requests(src: str, dst: str, filename: str):
     )
     yield pb2.ConvertRequest(command=cmd)
 
-    # 2) chunks do arquivo
     with open(filename, "rb") as f:
         while True:
             data = f.read(CHUNK_SIZE)
@@ -71,14 +65,12 @@ def generate_requests(src: str, dst: str, filename: str):
 
 
 def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename: str):
-    """Envia o arquivo para o servidor e recebe o convertido."""
     if not os.path.exists(filename):
         print(f"[ERRO] Arquivo '{filename}' não encontrado.")
         return
 
     ensure_output_dir()
 
-    # Cria iterador de requests (streaming)
     request_iterator = generate_requests(src, dst, filename)
 
     try:
@@ -92,17 +84,14 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
     file_open = False
 
     try:
-        # Percorre o stream de respostas
         for resp in responses:
             which = resp.WhichOneof("payload")
 
             if which == "error":
                 print(f"[ERRO DO SERVIDOR] {resp.error.message}")
-                # Se der erro, para de processar
                 return
 
             if which == "info":
-                # Primeira mensagem: metadados do arquivo convertido
                 output_filename = resp.info.output_filename or "arquivo_convertido"
                 output_path = os.path.join(OUTPUT_DIR, output_filename)
                 f_out = open(output_path, "wb")
@@ -112,7 +101,6 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
 
             if which == "chunk":
                 if not file_open:
-                    # Se, por algum motivo, chunk veio antes da info
                     output_filename = "arquivo_convertido_desconhecido"
                     output_path = os.path.join(OUTPUT_DIR, output_filename)
                     f_out = open(output_path, "wb")
@@ -135,9 +123,7 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
 def main():
     ensure_output_dir()
 
-    print("=" * 60)
     print("CLIENTE DE CONVERSÃO DE ARQUIVOS (gRPC)")
-    print("=" * 60)
     print(f"Conectando em {SERVER_HOST}:{SERVER_PORT}")
     print(f"Resultados serão salvos em: ./{OUTPUT_DIR}/")
     print_help()
