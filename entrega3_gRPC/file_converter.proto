@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package fileconverter;
+
+// Serviço de conversão de arquivos
+service FileConverter {
+  // Cliente envia stream (comando + chunks do arquivo)
+  // Servidor responde stream (metadados + chunks do arquivo convertido ou erro)
+  rpc Convert (stream ConvertRequest) returns (stream ConvertResponse);
+}
+
+// Mensagens que o cliente envia
+message ConvertRequest {
+  oneof payload {
+    Command command = 1;   // primeira mensagem deve ser o comando
+    FileChunk chunk = 2;   // demais mensagens: dados do arquivo
+  }
+}
+
+// Comando de conversão
+message Command {
+  string src_ext = 1;            // ex: "txt"
+  string dst_ext = 2;            // ex: "pdf"
+  string original_filename = 3;  // ex: "meuarquivo.txt"
+}
+
+// Chunk de dados de arquivo
+message FileChunk {
+  bytes data = 1;
+}
+
+// Mensagens que o servidor envia
+message ConvertResponse {
+  oneof payload {
+    ResponseInfo info = 1;   // primeira mensagem: informações do arquivo convertido
+    FileChunk chunk = 2;     // chunks do arquivo convertido
+    Error error = 3;         // em caso de erro
+  }
+}
+
+// Metadados do arquivo convertido
+message ResponseInfo {
+  string output_filename = 1; // nome do arquivo gerado pelo servidor
+}
+
+// Representa um erro de conversão/validação
+message Error {
+  string message = 1;
+}
