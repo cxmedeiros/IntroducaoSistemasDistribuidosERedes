@@ -96,9 +96,9 @@ class FileConverterServicer(pb2_grpc.FileConverterServicer):
 
         try:
             with open(input_path, "wb") as f_in:
-                for req in request_iterator:
-                    if req.WhichOneof("payload") == "chunk":
-                        f_in.write(req.chunk.data)
+                for part in request_iterator:
+                    if part.WhichOneof("payload") == "chunk":
+                        f_in.write(part.chunk.data)
 
             convert_file(input_path, output_path, src, dst)
 
@@ -106,12 +106,8 @@ class FileConverterServicer(pb2_grpc.FileConverterServicer):
             yield pb2.ConvertResponse(info=info)
 
             with open(output_path, "rb") as f_out:
-                while True:
-                    data = f_out.read(CHUNK_SIZE)
-                    if not data:
-                        break
-                    chunk_msg = pb2.FileChunk(data=data)
-                    yield pb2.ConvertResponse(chunk=chunk_msg)
+                for data in iter(lambda: f_out.read(CHUNK_SIZE), b""):
+                    yield pb2.ConvertResponse(chunk=pb2.FileChunk(data=data))
 
         except Exception as e:
             yield pb2.ConvertResponse(error=pb2.Error(message=f"Erro na conversão: {e}"))

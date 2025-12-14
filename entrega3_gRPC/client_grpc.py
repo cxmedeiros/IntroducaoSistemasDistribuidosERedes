@@ -38,30 +38,17 @@ def print_help():
     print("  EXIT - Encerra o cliente\n")
 
 
-def generate_requests(src: str, dst: str, filename: str):
-    """
-    Gera o stream de ConvertRequest:
-    - primeiro: Command
-    - depois: vários FileChunk com os bytes do arquivo.
-    """
+def stream_requests(src: str, dst: str, filename: str):
     src = src.lstrip(".").lower()
     dst = dst.lstrip(".").lower()
     base_name = os.path.basename(filename)
 
-    cmd = pb2.Command(
-        src_ext=src,
-        dst_ext=dst,
-        original_filename=base_name,
-    )
+    cmd = pb2.Command(src_ext=src, dst_ext=dst, original_filename=base_name)
     yield pb2.ConvertRequest(command=cmd)
 
     with open(filename, "rb") as f:
-        while True:
-            data = f.read(CHUNK_SIZE)
-            if not data:
-                break
-            chunk_msg = pb2.FileChunk(data=data)
-            yield pb2.ConvertRequest(chunk=chunk_msg)
+        for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
+            yield pb2.ConvertRequest(chunk=pb2.FileChunk(data=chunk))
 
 
 def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename: str):
@@ -71,7 +58,7 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
 
     ensure_output_dir()
 
-    request_iterator = generate_requests(src, dst, filename)
+    request_iterator = stream_requests(src, dst, filename)
 
     try:
         responses = stub.Convert(request_iterator)
@@ -85,21 +72,21 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
 
     try:
         for resp in responses:
-            which = resp.WhichOneof("payload")
+            payload = resp.WhichOneof("payload")
 
-            if which == "error":
-                print(f"[ERRO DO SERVIDOR] {resp.error.message}")
+            if payload == "error":
+                print(f"Erro do servidor: {resp.error.message}")
                 return
 
-            if which == "info":
+            if payload == "info":
                 output_filename = resp.info.output_filename or "arquivo_convertido"
                 output_path = os.path.join(OUTPUT_DIR, output_filename)
                 f_out = open(output_path, "wb")
                 file_open = True
-                print(f"[INFO] Recebendo arquivo convertido: {output_filename}")
+                print(f"Recebendo: {output_filename}")
                 continue
 
-            if which == "chunk":
+            if payload == "chunk":
                 if not file_open:
                     output_filename = "arquivo_convertido_desconhecido"
                     output_path = os.path.join(OUTPUT_DIR, output_filename)
@@ -110,9 +97,9 @@ def convert_file(stub: pb2_grpc.FileConverterStub, src: str, dst: str, filename:
 
         if file_open:
             f_out.close()
-            print(f"[SUCESSO] Arquivo convertido salvo em: {output_path}")
+            print(f"Arquivo salvo em: {output_path}")
         else:
-            print("[INFO] Nenhum dado de arquivo recebido.")
+            print("Nenhum dado de arquivo recebido.")
 
     except grpc.RpcError as e:
         print(f"[ERRO] Erro durante streaming: {e.code()} - {e.details()}")

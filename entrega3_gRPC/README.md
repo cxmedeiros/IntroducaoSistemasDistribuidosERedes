@@ -65,6 +65,4 @@ O cliente deve se conectar ao servidor e realizar as operações descritas na im
 
 ## Observações finais
 
-- Estas instruções cobrem a execução local de desenvolvimento no Windows. Para deploy em produção considere: usar um gerenciador de processos (systemd, pm2, etc.), certificados TLS para gRPC e variáveis de ambiente para configuração de portas/endpoints.
-
-Se quiser, eu posso também adicionar um `requirements.txt`, scripts de execução (`run_server.ps1`, `run_client.ps1`) ou um exemplo de virtualenv automatizado. Diga o que prefere.
+- Estas instruções cobrem a execução local de desenvolvimento no Windows.
